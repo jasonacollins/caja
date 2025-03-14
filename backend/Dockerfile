@@ -1,30 +1,37 @@
-FROM ubuntu:16.04 
+FROM ubuntu:20.04
+
+# Prevent interactive prompts during build
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Setup ODBC
-RUN apt-get update
-RUN apt-get -y install curl
-RUN apt-get -y install apt-transport-https
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
-RUN curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list > /etc/apt/sources.list.d/mssql-release.list
-RUN apt-get update
-RUN ACCEPT_EULA=Y apt-get -y install msodbcsql17
-RUN ACCEPT_EULA=Y apt-get -y install mssql-tools
-RUN echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc
+RUN apt-get update && apt-get install -y \
+    curl \
+    apt-transport-https \
+    gnupg \
+    unixodbc \
+    unixodbc-dev \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install miniconda to /miniconda
-RUN apt-get -y install bzip2
-RUN apt-get -y install python-openpyxl
-RUN curl -LO http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh
-RUN bash Miniconda-latest-Linux-x86_64.sh -p /miniconda -b
-RUN rm Miniconda-latest-Linux-x86_64.sh
-ENV PATH=/miniconda/bin:${PATH}
-RUN conda update -y conda
-RUN conda install pyodbc
-RUN conda install flask
-RUN pip install flask_cors
-RUN pip install boto3
-RUN pip install xmltodict
-RUN conda install pandas
-RUN pip install openpyxl
-RUN pip install xlrd 
-RUN conda install tqdm
+# Import Microsoft keys and repositories
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
+    curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list > /etc/apt/sources.list.d/mssql-release.list
+
+# Install SQL Server tools compatible with ARM64
+RUN apt-get update && \
+    ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18 && \
+    ACCEPT_EULA=Y apt-get install -y --no-install-recommends mssql-tools18 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Add SQL Server tools to path
+RUN echo 'export PATH="$PATH:/opt/mssql-tools18/bin"' >> ~/.bashrc
+
+# Install required Python packages
+RUN pip3 install pyodbc flask pandas tqdm flask_cors boto3 xmltodict openpyxl xlrd
+
+# Update ODBC driver configuration with correct path
+RUN echo "[ODBC Driver 18 for SQL Server]" > /etc/odbcinst.ini && \
+    echo "Description=Microsoft ODBC Driver 18 for SQL Server" >> /etc/odbcinst.ini && \
+    echo "Driver=/usr/lib/libmsodbcsql-18.so" >> /etc/odbcinst.ini && \
+    echo "UsageCount=1" >> /etc/odbcinst.ini

@@ -6,7 +6,7 @@ conn = dbutils.connect()
 cursor = conn.cursor()
 
 configfile = sys.argv[1]
-print configfile
+print(configfile)
 config = json.load(open(configfile, "rb"))
 gameid = config["id"]
 
@@ -17,7 +17,7 @@ query = """
         INSERT INTO GamesNew(GAMEID, CONFIG)
         VALUES ('%s', '%s')
         """ % (gameid, json.dumps(config))
-print query
+print(query)
 cursor.execute(query)
 conn.commit()
 conn.close()

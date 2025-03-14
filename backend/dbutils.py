@@ -7,11 +7,18 @@ SERVER = os.environ["SERVER"]
 USER = os.environ["USER"]
 PASSWORD = os.environ["PASSWORD"]
 DATABASE = os.environ["DATABASE"]
-DRIVER = '{ODBC Driver 17 for SQL Server}'
+DRIVER = '{ODBC Driver 18 for SQL Server}'
 
+# Update the connection string to accept self-signed certificates
 def connect():
-    conn_str = "DRIVER=%s;SERVER=%s;DATABASE=%s;UID=%s;PWD=%s" % (DRIVER,
-            SERVER, DATABASE, USER, PASSWORD)
+    server = os.environ['SERVER']  
+    database = os.environ['DATABASE'] 
+    username = os.environ['USER'] 
+    password = os.environ['PASSWORD']
+    
+    # Add TrustServerCertificate=yes to bypass SSL certificate validation
+    conn_str = 'DRIVER={ODBC Driver 18 for SQL Server};SERVER=' + server + ';DATABASE=' + database + ';UID=' + username + ';PWD=' + password + ';TrustServerCertificate=yes;'
+    
     conn = pyodbc.connect(conn_str)
     return conn
 
@@ -100,12 +107,12 @@ def get_game_config(gameid):
     SELECT CONFIG FROM GamesNew
     WHERE GAMEID='%s'
     """ % (gameid)
-    print query
+    print(query)
     config = cursor.execute(query).fetchval()
     if config is not None:
         config = json.loads(config)
     conn.close()
-    print config
+    print(config)
     return config
 
 def get_data_samples(gameid):
@@ -115,7 +122,7 @@ def get_data_samples(gameid):
     SELECT * FROM DataSamples 
     WHERE GAMEID='%s'
     """ % (gameid)
-    print query
+    print(query)
     samples = cursor.execute(query).fetchall()
     conn.close()
     samples = [row2dict(row) for row in samples]

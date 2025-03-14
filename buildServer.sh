@@ -1,1 +1,1 @@
-docker build -t ${SERVER_IMAGE} ./backend
+docker build --platform=linux/arm64 -t ${SERVER_IMAGE} ./backend
